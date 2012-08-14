@@ -10,7 +10,54 @@ def main():
     connection = Connection('192.168.194.171', 27017)
     db = connection.comments
 
-    init(db)
+    #init(db)
+    timeline(db, 1, 2)
+    print '===='
+    timeline(db, 1, 2, 0, True)
+    print '===='
+    timeline(db, 1, 2, 1)
+    print '===='
+    timeline(db, 1, 2, 1, True)
+    print '===='
+    timeline(db, 1, 2, 0, False, since_id = 1)
+    print '===='
+    timeline(db, 1, 2, 0, True, since_id = 1)
+    print '===='
+    timeline(db, 1, 2, 0, False, None, max_id = 2)
+    print '===='
+    timeline(db, 1, 2, 0, True, None, max_id = 2)
+    print '===='
+
+def timeline(db, source_id, num = 10, start = 0, reverse = False, since_id = None, max_id = None):
+    collection = db.full_tree_in_single_document
+
+    skip = start
+    if reverse is True:
+        skip = (0 - (skip + num))
+
+    ret = []
+    if since_id is not None:
+        ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [since_id + 1, num]}})
+    elif max_id is not None:
+        ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [0 if (max_id - num < 0) else max_id - num, num]}})
+    else:
+        ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [skip, num]}})
+
+    for item in ret:
+        total = item['total']
+        for index, comment in enumerate(item['comments']):
+            if since_id is not None:
+                comment['index'] = since_id + 1 + index
+            elif max_id is not None:
+                comment['index'] = abs(max_id - num + index)
+            else:
+                if reverse is True:
+                    comment['index'] = total - num + index - start
+                else:
+                    comment['index'] = start + index
+        if reverse is True:
+            item['comments'].reverse()
+        print item
 
 def init(db):
     collection = db.full_tree_in_single_document
@@ -20,17 +67,17 @@ def init(db):
     from random import choice
     doc_id = 1
 
-    doc = {'_id' : doc_id, 'comments' : []}
+    doc = {'_id' : doc_id, 'comments' : [], 'total' : 0}
     collection.insert(doc)
 
     create_time = update_time = datetime.now()
     comment1 = {'id' : 1, 'by' : choice(author), 'content' : choice(vote), 'replies' : [], 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [], 'parent' : -1}
-    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment1}})
+    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment1}, '$inc' : {'total' : 1}})
     sleep(1)
 
     create_time = update_time = datetime.now()
     comment2 = {'id' : 2, 'by' : choice(author), 'content' : choice(vote), 'replies' : [], 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [], 'parent' : -1}
-    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment2}})
+    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment2}, '$inc' : {'total' : 1}})
     sleep(1)
 
     create_time = update_time = datetime.now()
@@ -45,12 +92,17 @@ def init(db):
 
     create_time = update_time = datetime.now()
     comment5 = {'id' : 5, 'by' : choice(author), 'content' : choice(vote), 'replies' : [], 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [], 'parent' : -1}
-    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment5}})
+    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment5}, '$inc' : {'total' : 1}})
     sleep(1)
 
     create_time = update_time = datetime.now()
     comment6 = {'id' : 6, 'by' : choice(author), 'content' : choice(vote), 'replies' : [], 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [2], 'parent' : 2}
     collection.update({'_id' : doc_id}, {'$push' : {'comments.2.replies' : comment6}})
+    sleep(1)
+
+    create_time = update_time = datetime.now()
+    comment7 = {'id' : 7, 'by' : choice(author), 'content' : choice(vote), 'replies' : [], 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [], 'parent' : -1}
+    collection.update({'_id' : doc_id}, {'$push' : {'comments' : comment7}, '$inc' : {'total' : 1}})
 
 if __name__ == '__main__':
     main()
