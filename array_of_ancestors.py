@@ -19,15 +19,18 @@ def main():
     print '===='
     timeline(db, 1, 2, 1, True)
     print '===='
+    timeline(db, 1, 2, 0, False, since_id = 2)
+    print '===='
     timeline(db, 1, 2, 0, True, since_id = 2)
     print '===='
-    timeline(db, 1, 2, 0, True, None, max_id = 2)
+    timeline(db, 1, 2, 0, False, None, max_id = 5)
+    print '===='
+    timeline(db, 1, 2, 0, True, None, max_id = 5)
     print '===='
 
 def timeline(db, source_id, num = 10, start = 0, reverse = False, since_id = None, max_id = None):
     source = db.array_of_ancestors
 
-    now = datetime.now()
     sort_type = 1
     if reverse is True:
         sort_type = -1
@@ -104,6 +107,11 @@ def init(db):
     create_time = update_time = datetime.now()
     comment6 = {'_id' : 6, 'sid' : doc_id, 'by' : choice(author), 'content' : choice(vote), 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [5], 'parent' : 5}
     source.insert(comment6)
+    sleep(1)
+
+    create_time = update_time = datetime.now()
+    comment7 = {'_id' : 7, 'sid' : doc_id, 'by' : choice(author), 'content' : choice(vote), 'create_time' : create_time, 'update_time' : update_time, 'ancestors' : [], 'parent' : 0}
+    source.insert(comment7)
 
 if __name__ == '__main__':
     main()
