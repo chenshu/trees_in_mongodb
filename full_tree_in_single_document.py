@@ -32,16 +32,14 @@ def timeline(db, source_id, num = 10, start = 0, reverse = False, since_id = Non
     collection = db.full_tree_in_single_document
 
     skip = start
-    if reverse is True:
-        skip = (0 - (skip + num))
-
-    ret = []
     if since_id is not None:
-        ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [since_id + 1, num]}})
+        skip = since_id + 1
     elif max_id is not None:
-        ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [0 if (max_id - num < 0) else max_id - num, num]}})
+        skip = 0 if (max_id - num < 0) else max_id - num
     else:
-        ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [skip, num]}})
+        if reverse is True:
+            skip = (0 - (skip + num))
+    ret = collection.find({'_id' : source_id}, {'comments' : {'$slice' : [skip, num]}})
 
     for item in ret:
         total = item['total']
